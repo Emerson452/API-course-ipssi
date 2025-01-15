@@ -8,4 +8,5 @@ fetch(url)
     console.log("Id :", data.id);
     console.log("Types :", data.types.map((type) => type.type.name).join(", "));
   })
+
   .catch((error) => console.error("Erreur :", error));
