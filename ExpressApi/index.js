@@ -1,6 +1,6 @@
 //Importe le module express
 const express = require("express");
-
+const mysql = require("mysql2");
 //Créer une app express
 const app = express();
 
@@ -8,6 +8,22 @@ const app = express();
 const port = 3000;
 
 app.use(express.json());
+
+//Créer une connection à la bdd
+const connection = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "password",
+  database: "db_user",
+});
+
+//Tester la connexion
+connection.connect((error) => {
+  if (error) {
+    console.error("Erreur de connexion à la bdd:", error);
+  }
+  console.log("Connecté à la bdd");
+});
 
 //DATA
 const users = [
@@ -62,7 +78,16 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/users", (req, res) => {
-  res.json(users);
+  const query = "SELECT * FROM users";
+
+  connection.query(query, (error, result) => {
+    if (error) {
+      return res
+        .status(400)
+        .json({ message: "Erreur de récupération des users !" });
+    }
+    res.status(200).json(result);
+  });
 });
 
 //Route GET utilisateur par son ID
@@ -78,25 +103,24 @@ app.get("/api/users/:id", (req, res) => {
 
 //Route POST pour ajouter un utilisateur
 app.post("/api/users", (req, res) => {
-  const newUser = req.body; //Récupérer les données envoyées dans le corps de la requête(body)
+  const { name, email, password } = req.body; //Récupérer les données envoyées dans le corps de la requête(body)
 
-  if (
-    !newUser.id ||
-    !newUser.name ||
-    !newUser.email ||
-    !newUser.age ||
-    !newUser.address
-  ) {
-    return res.status(400).json({
-      message: "Les champs id, name, email, age et address sont requis",
-    });
+  //vérifier si les données nécessaires sont présentes
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "Données manquantes" });
   }
 
-  //Ajouter l'utilisateur à la liste
-  users.push(newUser);
-
-  //Répondre avec l'utilisateur ajouté
-  res.status(201).json(newUser);
+  //Req pour insérer les user data dans la bdd
+  const query = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+  connection.query(query, [name, email, password], (error, result) => {
+    if (error) {
+      return res.status(400).json({ message: "Erreur d'ajout" });
+    }
+    res.status(201).json({
+      message: "Utilisateur ajouté avec succès",
+      userId: result.insertId,
+    });
+  });
 });
 
 //Route PUT pour mettre à jour un utilisateur
