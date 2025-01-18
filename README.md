@@ -19,6 +19,8 @@ git push
 
 si ça fonctionne pas, c'est que la branch n'est pas mise sur github
 
+git clone url
+
 DONC
 
 git push --set-upstream origin master
